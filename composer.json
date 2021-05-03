@@ -7,7 +7,18 @@
             "email": "up2top-ru@yandex.ru"
         }
     ],
-    "require": {
+    "require": {},
+    "require-dev": {
         "orchestra/testbench": "^6.17"
+    },
+    "autoload": {
+        "psr-4": {
+            "up2top\\FlatFiles\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "up2top\\FlatFiles\\Tests\\": "tests/"
+        }
     }
 }
