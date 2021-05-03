@@ -1,0 +1,13 @@
+{
+    "name": "up2top/flat-files",
+    "description": "Laravel flat files manager.",
+    "authors": [
+        {
+            "name": "up2top",
+            "email": "up2top-ru@yandex.ru"
+        }
+    ],
+    "require": {
+        "orchestra/testbench": "^6.17"
+    }
+}
