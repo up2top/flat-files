@@ -7,7 +7,9 @@
             "email": "up2top-ru@yandex.ru"
         }
     ],
-    "require": {},
+    "require": {
+        "erusev/parsedown": "^1.7"
+    },
     "require-dev": {
         "orchestra/testbench": "^6.17"
     },
@@ -19,6 +21,13 @@
     "autoload-dev": {
         "psr-4": {
             "up2top\\FlatFiles\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "up2top\\FlatFiles\\FlatFilesServiceProvider"
+            ]
         }
     }
 }
