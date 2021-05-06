@@ -2,11 +2,11 @@
 
 namespace up2top\FlatFiles\Console\Commands;
 
-use up2top\FlatFiles\Console\Messagable;
-use up2top\FlatFiles\Contracts\MessagableContract;
-use up2top\FlatFiles\Console\Commands\FlatFiles\FlatFilesLoader;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use up2top\FlatFiles\Console\Commands\FlatFiles\FlatFilesLoader;
+use up2top\FlatFiles\Console\Messagable;
+use up2top\FlatFiles\Contracts\MessagableContract;
 
 class LoadFlatContent extends Command implements MessagableContract
 {

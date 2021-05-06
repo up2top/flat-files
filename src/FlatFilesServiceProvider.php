@@ -25,6 +25,7 @@ class FlatFilesServiceProvider extends ServiceProvider
     {
         $this->commands([
             Console\Commands\LoadFlatContent::class,
+            Console\Commands\UpgradeToPackageFix::class,
         ]);
     }
 }
