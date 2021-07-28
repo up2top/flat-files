@@ -31,6 +31,8 @@ class DataConvertor
      */
     public function run($records)
     {
+        $filesData = [];
+
         $defaultLocale = app()->getLocale();
 
         foreach ($records as $file => $record) {

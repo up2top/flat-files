@@ -198,10 +198,7 @@ class FlatFilesLoader
      */
     private function updateForeigns()
     {
-        $keys = array_keys($this->insertData + $this->updateData);
-        $foreigns = array_intersect_key($this->foreigns, array_flip($keys));
-
-        foreach ($foreigns as $id => $data) {
+        foreach ($this->foreigns as $id => $data) {
             DB::table($this->dir)->where('id', $id)->update($data);
         }
     }
