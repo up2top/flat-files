@@ -9,7 +9,9 @@ use Parsedown;
 
 class DataConvertor
 {
+    protected $dir;
     protected $command;
+    protected $columns = [];
     protected $slugRoutes = [];
 
     /**
@@ -17,18 +19,19 @@ class DataConvertor
      *
      * @return void
      */
-    public function __construct(MessagableContract $command)
+    public function __construct(MessagableContract $command, $dir)
     {
+        $this->dir = $dir;
         $this->command = $command;
+        $this->getDatabaseColumns();
     }
 
     /**
      * Convert records to the database format.
      */
-    public function run($records, $dir)
+    public function run($records)
     {
         $defaultLocale = app()->getLocale();
-        $columns = $this->getDatabaseColumns($dir);
 
         foreach ($records as $file => $record) {
             $id = $record['id'];
@@ -43,7 +46,7 @@ class DataConvertor
 
             $route = $this->getFileRoute($file, $record);
 
-            foreach ($columns as $column => $length) {
+            foreach ($this->columns as $column => $length) {
                 switch ($column) {
                 case 'route':
                     $data[$column] = $route;
@@ -64,7 +67,7 @@ class DataConvertor
 
                 case 'flat':
                     $data[$column] = json_encode(
-                        array_diff_key($record, array_flip(array_keys($columns)))
+                        array_diff_key($record, array_flip(array_keys($this->columns)))
                     );
                     break;
 
@@ -100,6 +103,14 @@ class DataConvertor
     }
 
     /**
+     * Columns getter.
+     */
+    public function getColumns()
+    {
+        return $this->columns;
+    }
+
+    /**
      * Get route from filename and path.
      */
     private function getFileRoute($file, $record)
@@ -126,17 +137,13 @@ class DataConvertor
     /**
      * Get listing of columns with maximum length.
      */
-    private function getDatabaseColumns($dir)
+    private function getDatabaseColumns()
     {
-        $columns = [];
-
-        foreach (Schema::getColumnListing($dir) as $column) {
-            $columns[$column] = DB::connection()
-                ->getDoctrineColumn($dir, $column)
+        foreach (Schema::getColumnListing($this->dir) as $column) {
+            $this->columns[$column] = DB::connection()
+                ->getDoctrineColumn($this->dir, $column)
                 ->getLength();
         }
-
-        return $columns;
     }
 
     /**

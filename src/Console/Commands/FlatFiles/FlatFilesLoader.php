@@ -14,6 +14,7 @@ class FlatFilesLoader
     protected $dir;
     protected $contentType;
     protected $filesManager;
+    protected $dataConvertor;
     protected $siblings = [];
     protected $translations = [];
     protected $dbData = [];
@@ -34,6 +35,7 @@ class FlatFilesLoader
         $this->subdir = $subdir;
         $this->contentType = Str::singular($dir);
         $this->filesManager = new FilesManager($command);
+        $this->dataConvertor = new DataConvertor($this->command, $this->dir);
     }
 
     /**
@@ -85,7 +87,7 @@ class FlatFilesLoader
     private function prepareData()
     {
         $records = $this->filesManager->scan($this->dir, $this->subdir);
-        $this->filesData = (new DataConvertor($this->command))->run($records, $this->dir);
+        $this->filesData = $this->dataConvertor->run($records);
         $this->setTraslations($records);
         $this->siblings = (new SiblingsCalculator($this->filesData))->calculate();
     }
@@ -145,6 +147,10 @@ class FlatFilesLoader
      */
     private function updateDatabase()
     {
+        $this->resetForeignFields();
+
+        $this->deleteContent();
+
         DB::table($this->dir)->insert(array_values($this->insertData));
 
         foreach ($this->updateData as $id => $data) {
@@ -154,8 +160,6 @@ class FlatFilesLoader
         $this->updateSiblings();
 
         $this->updateTranslations();
-
-        $this->deleteContent();
 
         DB::table('flatfiles')->where('flattable_type', $this->contentType)->delete();
         DB::table('flatfiles')->insert(array_values($this->hashData));
@@ -177,6 +181,28 @@ class FlatFilesLoader
             $this->command->info(
                 $count . ($count == 1 ? ' item ' : ' items ') . $type . '.'
             );
+        }
+    }
+
+    /**
+     * Reset foreign fields to NULL to avoid error on deleting records:
+     * General error: 3008 Foreign key cascade delete/update exceeds max depth of 15.
+     */
+    private function resetForeignFields()
+    {
+        $foreigns = [
+            'translation_id',
+            'parent_id',
+            'prev_id',
+            'next_id'
+        ];
+
+        $columns = $this->dataConvertor->getColumns();
+        $columns = array_intersect($foreigns, array_keys($columns));
+
+        if (! empty($columns)) {
+            $data = array_combine($columns, array_fill(0, count($columns), null));
+            DB::table($this->dir)->update($data);
         }
     }
 
