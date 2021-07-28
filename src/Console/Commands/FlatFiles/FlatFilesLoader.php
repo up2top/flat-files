@@ -72,6 +72,7 @@ class FlatFilesLoader
         // Load list of existing database content.
         try {
             $this->dbData = DB::table('flatfiles')
+                ->join($this->dir, 'flatfiles.flattable_id', '=', $this->dir . '.id')
                 ->where('flattable_type', $this->contentType)
                 ->pluck('hash', 'flattable_id')
                 ->toArray();
