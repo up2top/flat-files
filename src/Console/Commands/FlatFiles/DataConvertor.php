@@ -56,11 +56,6 @@ class DataConvertor
                     $data[$column] = $record['slug'] ?? basename($route);
                     break;
 
-                case 'parent_id':
-                    $parentFile = preg_replace('#[^/]+/((?:([^/]{2})\.)?index.md)$#', '$1', $file);
-                    $data[$column] = $records[$parentFile]['id'] ?? null;
-                    break;
-
                 case 'depth':
                     $data[$column] = substr_count($file, '/') - 1;
                     break;

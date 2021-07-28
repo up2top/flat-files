@@ -2,11 +2,11 @@
 
 namespace up2top\FlatFiles\Console\Commands\FlatFiles;
 
-use up2top\FlatFiles\Contracts\MessagableContract;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use up2top\FlatFiles\Contracts\MessagableContract;
 
 class FlatFilesLoader
 {
@@ -15,8 +15,8 @@ class FlatFilesLoader
     protected $contentType;
     protected $filesManager;
     protected $dataConvertor;
-    protected $siblings = [];
-    protected $translations = [];
+    protected $foreigns;
+    protected $foreignColumns;
     protected $dbData = [];
     protected $filesData = [];
     protected $insertData = [];
@@ -36,6 +36,7 @@ class FlatFilesLoader
         $this->contentType = Str::singular($dir);
         $this->filesManager = new FilesManager($command);
         $this->dataConvertor = new DataConvertor($this->command, $this->dir);
+        $this->foreignColumns = $this->getForeignColumns();
     }
 
     /**
@@ -88,28 +89,22 @@ class FlatFilesLoader
     {
         $records = $this->filesManager->scan($this->dir, $this->subdir);
         $this->filesData = $this->dataConvertor->run($records);
-        $this->setTraslations($records);
-        $this->siblings = (new SiblingsCalculator($this->filesData))->calculate();
+        $this->foreigns = (new ForeignsCalculator($records, $this->foreignColumns))->calculate();
     }
 
     /**
-     * Set translations.
+     * Determine foreign columns for a given content type.
      */
-    private function setTraslations($records)
+    private function getForeignColumns()
     {
-        foreach ($records as $file => $record) {
-            $id = $record['id'];
-            $filename = basename($file);
-            $translationFilename = $filename == 'index.md' ? 'en.index.md' : 'index.md';
-            $translationFile = str_replace($filename, $translationFilename, $file);
+        $columns = $this->dataConvertor->getColumns();
 
-            if (array_key_exists('translation_id', $this->filesData[$id])
-                && isset($records[$translationFile]['id'])) {
-                $this->translations[$id] = [
-                    'translation_id' => $records[$translationFile]['id']
-                ];
-            }
-        }
+        return array_intersect([
+            'translation_id',
+            'parent_id',
+            'prev_id',
+            'next_id'
+        ], array_keys($columns));
     }
 
     /**
@@ -124,8 +119,7 @@ class FlatFilesLoader
                 'hash' => md5(json_encode(
                     array_merge(
                         $data,
-                        $this->siblings[$id] ?? [],
-                        $this->translations[$id] ?? []
+                        $this->foreigns[$id] ?? []
                     )
                 ))
             ];
@@ -151,15 +145,13 @@ class FlatFilesLoader
 
         $this->deleteContent();
 
-        DB::table($this->dir)->insert(array_values($this->insertData));
-
         foreach ($this->updateData as $id => $data) {
             DB::table($this->dir)->where('id', $id)->update($data);
         }
 
-        $this->updateSiblings();
+        DB::table($this->dir)->insert(array_values($this->insertData));
 
-        $this->updateTranslations();
+        $this->updateForeigns();
 
         DB::table('flatfiles')->where('flattable_type', $this->contentType)->delete();
         DB::table('flatfiles')->insert(array_values($this->hashData));
@@ -190,44 +182,25 @@ class FlatFilesLoader
      */
     private function resetForeignFields()
     {
-        $foreigns = [
-            'translation_id',
-            'parent_id',
-            'prev_id',
-            'next_id'
-        ];
-
-        $columns = $this->dataConvertor->getColumns();
-        $columns = array_intersect($foreigns, array_keys($columns));
-
-        if (! empty($columns)) {
-            $data = array_combine($columns, array_fill(0, count($columns), null));
-            DB::table($this->dir)->update($data);
+        if (empty($this->foreignColumns)) {
+            return;
         }
+
+        $nullValues = array_fill(0, count($this->foreignColumns), null);
+        $data = array_combine($this->foreignColumns, $nullValues);
+
+        DB::table($this->dir)->update($data);
     }
 
     /**
-     * Update content prev_id and next_id values.
+     * Update content parent_id, translation_id, prev_id and next_id values.
      */
-    private function updateSiblings()
+    private function updateForeigns()
     {
         $keys = array_keys($this->insertData + $this->updateData);
-        $siblings = array_intersect_key($this->siblings, array_flip($keys));
+        $foreigns = array_intersect_key($this->foreigns, array_flip($keys));
 
-        foreach ($siblings as $id => $data) {
-            DB::table($this->dir)->where('id', $id)->update($data);
-        }
-    }
-
-    /**
-     * Update content translation_id value.
-     */
-    private function updateTranslations()
-    {
-        $keys = array_keys($this->insertData + $this->updateData);
-        $translations = array_intersect_key($this->translations, array_flip($keys));
-
-        foreach ($translations as $id => $data) {
+        foreach ($foreigns as $id => $data) {
             DB::table($this->dir)->where('id', $id)->update($data);
         }
     }
