@@ -13,6 +13,7 @@ class LoadFlatContent extends Command implements MessagableContract
     use Messagable;
 
     protected $signature = 'flat:load-content {dir?} {--dir=} {--subdir=}';
+
     protected $description = 'Load content from flat files to the corresponding database tables.';
 
     /**
@@ -40,6 +41,7 @@ class LoadFlatContent extends Command implements MessagableContract
 
         if (empty($dirs)) {
             $this->error('No subfolders in content directory.');
+
             return;
         }
 
@@ -55,6 +57,7 @@ class LoadFlatContent extends Command implements MessagableContract
 
         if ($this->isStopRequired()) {
             $this->comment(ucfirst($dir) . ' loading interrupted.');
+
             return;
         }
 

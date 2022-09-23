@@ -11,18 +11,31 @@ use up2top\FlatFiles\Contracts\MessagableContract;
 class FlatFilesLoader
 {
     protected $command;
+
     protected $dir;
+
     protected $contentType;
+
     protected $filesManager;
+
     protected $dataConvertor;
+
     protected $foreigns;
+
     protected $foreignColumns;
+
     protected $dbData = [];
+
     protected $filesData = [];
+
     protected $insertData = [];
+
     protected $updateData = [];
+
     protected $deleteData = [];
+
     protected $hashData = [];
+
     protected $subdir;
 
     /**
@@ -104,7 +117,7 @@ class FlatFilesLoader
             'translation_id',
             'parent_id',
             'prev_id',
-            'next_id'
+            'next_id',
         ], array_keys($columns));
     }
 
@@ -122,7 +135,7 @@ class FlatFilesLoader
                         $data,
                         $this->foreigns[$id] ?? []
                     )
-                ))
+                )),
             ];
 
             if ($this->contentUnchanged($id)) {
@@ -142,20 +155,29 @@ class FlatFilesLoader
      */
     private function updateDatabase()
     {
-        $this->resetForeignFields();
+        DB::transaction(function () {
+            $this->resetForeignFields();
 
-        $this->deleteContent();
+            $this->deleteContent();
 
-        foreach ($this->updateData as $id => $data) {
-            DB::table($this->dir)->where('id', $id)->update($data);
-        }
+            foreach ($this->updateData as $id => $data) {
+                DB::table($this->dir)->where('id', $id)->update($data);
+            }
 
-        DB::table($this->dir)->insert(array_values($this->insertData));
+            $insertData = array_values($this->insertData);
+            foreach (array_chunk($insertData, 1000) as $data) {
+                DB::table($this->dir)->insert($data);
+            }
 
-        $this->updateForeigns();
+            $this->updateForeigns();
 
-        DB::table('flatfiles')->where('flattable_type', $this->contentType)->delete();
-        DB::table('flatfiles')->insert(array_values($this->hashData));
+            DB::table('flatfiles')->where('flattable_type', $this->contentType)->delete();
+
+            $hashData = array_values($this->hashData);
+            foreach (array_chunk($hashData, 1000) as $data) {
+                DB::table('flatfiles')->insert($data);
+            }
+        });
     }
 
     /**
@@ -167,7 +189,7 @@ class FlatFilesLoader
             'scanned' => $this->filesManager->filesCounter(),
             'created' => count($this->insertData),
             'updated' => count($this->updateData),
-            'deleted' => count($this->deleteData)
+            'deleted' => count($this->deleteData),
         ];
 
         foreach ($results as $type => $count) {
