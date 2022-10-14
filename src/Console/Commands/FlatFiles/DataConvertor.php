@@ -79,8 +79,8 @@ class DataConvertor
 
                 case 'locale':
                     $parts = explode('.', basename($file));
-                    $data[$column] = sizeof($parts) == 3 && strlen($parts[0]) == 2
-                        ? $parts[0] : $defaultLocale;
+                    $data[$column] = sizeof($parts) == 3 && strlen($parts[1]) == 2
+                        ? $parts[1] : $defaultLocale;
                     break;
 
                 default:
