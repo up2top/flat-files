@@ -62,7 +62,7 @@ class DataConvertor
                     $data[$column] = substr_count($file, '/') - 1;
                     break;
 
-                case 'flat':
+                case 'extra':
                     $data[$column] = json_encode(
                         array_diff_key($record, array_flip(array_keys($this->columns)))
                     );

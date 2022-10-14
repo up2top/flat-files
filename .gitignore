@@ -6,7 +6,6 @@
 /vendor
 /database/snapshots
 /.idea
-/*.sublime-workspace
 npm-debug.log
 yarn-error.log
 .env

@@ -61,8 +61,11 @@ class ForeignsCalculator
 
         foreach ($this->records as $file => $record) {
             $id = $record['id'];
-            $filename = basename($file);
-            $translationFilename = $filename == 'index.md' ? 'en.index.md' : 'index.md';
+            $filename = basename($file, '.md');
+            $translationFilename = substr($filename, -3) === '.en'
+                ? substr($filename, 0, -3)
+                : $filename . '.en';
+
             $translationFile = str_replace($filename, $translationFilename, $file);
             $this->foreigns[$id]['translation_id'] = $this->records[$translationFile]['id'] ?? null;
         }
@@ -99,8 +102,8 @@ class ForeignsCalculator
     {
         $this->books = collect($this->data)
             ->filter(function ($value) {
-                return ! isset($value['flat'])
-                    || strpos($value['flat'], '"unpublished"') === false;
+                return ! isset($value['extra'])
+                    || strpos($value['extra'], '"unpublished"') === false;
             })
             ->where('parent_id', '!=', null)
             ->groupBy('parent_id')
