@@ -41,7 +41,7 @@ class ForeignsCalculator
             $id = $record['id'];
 
             if (in_array('parent_id', $this->columns)) {
-                $parentFile = preg_replace('#[^/]+/((?:([^/]{2})\.)?index.md)$#', '$1', $file);
+                $parentFile = preg_replace('#[^/]+/(index.(?:([^/]{2})\.)?md)$#', '$1', $file);
                 $record['parent_id'] = $this->records[$parentFile]['id'] ?? null;
                 $this->foreigns[$id]['parent_id'] = $record['parent_id'];
             }
