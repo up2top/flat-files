@@ -61,10 +61,10 @@ class ForeignsCalculator
 
         foreach ($this->records as $file => $record) {
             $id = $record['id'];
-            $filename = basename($file, '.md');
-            $translationFilename = substr($filename, -3) === '.en'
-                ? substr($filename, 0, -3)
-                : $filename . '.en';
+            $filename = basename($file);
+            $translationFilename = substr($filename, -6) == '.en.md'
+                ? substr($filename, 0, -6) . '.md'
+                : substr($filename, 0, -3) . '.en.md';
 
             $translationFile = str_replace($filename, $translationFilename, $file);
             $this->foreigns[$id]['translation_id'] = $this->records[$translationFile]['id'] ?? null;
